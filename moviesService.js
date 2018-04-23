@@ -104,7 +104,9 @@ function moviesService(options) {
             let promises = providerService.getMovieDetailsUrl(ids).map(url => makeRequest(url));
             return Promise.all(promises)
             .then(data => {
-                return getMinimumCost(data).Price;
+                let movie = getMinimumCost(data);
+                movie["Provider"] = providerService.getProviderName(movie.ID);
+                return movie;
             });  
         }         
     }

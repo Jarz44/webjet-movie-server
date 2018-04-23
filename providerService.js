@@ -9,16 +9,7 @@ function providersService(options) {
     const baseMovieDetailUrls = providers.map(provider => {        
         provider.detailMovieDetailsUrl = options.baseMovieDetailsUrl.replace('{0}', provider.name)
     });
-
-   function getServiceWithId(id) {
-        provider = _.find(providers, function(provider){
-            return _.includes(id, provider.prefix);
-        });
-
-        return provider.detailMovieDetailsUrl.replace('{1}', id);        
-    }
-
-
+  
     return {
         getMoviesUrl: function() {
             return baseMoviesUrls;
@@ -26,7 +17,22 @@ function providersService(options) {
 
         getMovieDetailsUrl: function (ids) {            
             return ids.map(id => getServiceWithId(id));
-        }      
+        },
+        
+        getProviderName: function(id) {
+           return getProvider(id).name;            
+        }
+    }
+
+    function getServiceWithId(id) {
+        provider = getProvider(id);
+        return provider.detailMovieDetailsUrl.replace('{1}', id);        
+    }
+
+    function getProvider(id) {
+        return _.find(providers, function(provider){
+            return _.includes(id, provider.prefix);
+        });   
     }
 
 }

@@ -16,9 +16,9 @@ app.get('/movies', (req, res) =>
     .catch(console.error);
 })
 
-app.get('/cost', (req, res) => 
+app.get('/cost/:ids?', (req, res) => 
 {   
-    let movieIds = ["cw0076759", "cw0080684"];
+    movieIds = req.query.ids.split(',');
     moviesService.getMinimumMovieCost(movieIds)
     .then((minimumMovieCost) => {
        return res.send(minimumMovieCost)
