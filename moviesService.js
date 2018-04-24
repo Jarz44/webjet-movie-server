@@ -16,22 +16,34 @@ function moviesService(options) {
 
     const httpRequestHeaderOptions  = {
         'x-access-token' : httpConfig.token,
-        'json': true
-    }     
+        'json': true, 
+        'retries': 4
+    }   
+         
+    return {
 
-    function getDataFromResponses(data) {
-        return data.map(x => getDataFromResponse(x));      
+        getMovies: function() {
+
+            let moviesPromises = providerService.getMoviesUrl().map(url => makeRequest(url));
+            return Promise.all(moviesPromises)
+            .then(data => {
+                return buildMoviesList(data);
+            });       
+        },       
+        
+        getMinimumMovieCost: function(ids) {
+            let promises = providerService.getMovieDetailsUrl(ids).map(url => makeRequest(url));
+            return Promise.all(promises)
+            .then(data => {
+                let movie = getMinimumCost(data);
+                if(movie) {
+                    movie["Provider"] = providerService.getProviderName(movie.ID);
+                }
+                return movie;
+            });  
+        }         
     }
 
-    function getDataFromResponse(data) {
-        var movies = []
-        if(data !== undefined && data.statusCode === 200 )
-        {  
-            movies = JSON.parse(data.body);               
-        }
-        return movies;
-    }
-    
     function makeRequest(requestUrl) {
         const breaker = circuitBreaker(got.get, circuitBreakerOptions); 
             
@@ -39,13 +51,12 @@ function moviesService(options) {
         breaker.on('fallback', (result,e,x) => console.log(result,e));
 
         return breaker.fire(requestUrl,{
-            headers: {
-                'x-access-token' : httpConfig.token,
-                'json': true
-            }
+            headers: 
+                httpRequestHeaderOptions
+            
         });
     }
-    
+
     function buildMoviesList(data) {
 
         let flattenMovies = [];
@@ -65,6 +76,26 @@ function moviesService(options) {
         return flattenedMovies;
     }
 
+    function getMinimumCost(data) {
+        let movies = [];
+        data = getDataFromResponses(data);
+        data = removeEmptyResults(data);
+        return _.minBy(data, 'Price');
+    }
+
+    function getDataFromResponses(data) {
+        return data.map(x => getDataFromResponse(x));      
+    }
+
+    function getDataFromResponse(data) {
+        var movies = []
+        if(data !== undefined && data.statusCode === 200 )
+        {  
+            movies = JSON.parse(data.body);               
+        }
+        return movies;
+    }        
+    
     function removeEmptyResults(data) {
         nonEmptyResults = []
         data.forEach(element => {
@@ -80,35 +111,6 @@ function moviesService(options) {
         flattenedResults= [].concat.apply([], data.map(x => x[key]));
         
         return flattenedResults;
-    }
-
-    function getMinimumCost(data) {
-        let movies = [];
-        data = getDataFromResponses(data);
-        data = removeEmptyResults(data);
-        return _.minBy(data, 'Price');
-    }
-     
-    return {
-
-        getMovies: function() {
-
-            let moviesPromises = providerService.getMoviesUrl().map(url => makeRequest(url));
-            return Promise.all(moviesPromises)
-            .then(data => {
-                return buildMoviesList(data);
-            });       
-        },       
-        
-        getMinimumMovieCost: function(ids) {
-            let promises = providerService.getMovieDetailsUrl(ids).map(url => makeRequest(url));
-            return Promise.all(promises)
-            .then(data => {
-                let movie = getMinimumCost(data);
-                movie["Provider"] = providerService.getProviderName(movie.ID);
-                return movie;
-            });  
-        }         
     }
 }
 

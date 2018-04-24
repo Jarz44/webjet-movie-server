@@ -1,4 +1,3 @@
-const config = require('./config/serviceConfig.js');
 const _ = require('lodash');
 
 function providersService(options) {
@@ -24,16 +23,16 @@ function providersService(options) {
         }
     }
 
-    function getServiceWithId(id) {
-        provider = getProvider(id);
-        return provider.detailMovieDetailsUrl.replace('{1}', id);        
-    }
-
     function getProvider(id) {
         return _.find(providers, function(provider){
             return _.includes(id, provider.prefix);
         });   
     }
+
+    function getServiceWithId(id) {
+        provider = getProvider(id);
+        return provider.detailMovieDetailsUrl.replace('{1}', id);        
+    } 
 
 }
 
