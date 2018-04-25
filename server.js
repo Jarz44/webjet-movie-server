@@ -1,10 +1,18 @@
 const express = require('express');
+const got = require('got');
 const serviceConfig = require("./config/serviceConfig.js");
 const serverConfig = require("./config/serverConfig.js");
 
 
 const providerService = require("./providerService.js")(serviceConfig);
-const moviesService = require("./moviesService.js")({"providers": providerService});
+const circuitBreakerService = require("./circuitBreakerService.js")({
+    'action':got.get,
+    "providers": providerService
+});
+const moviesService = require("./moviesService.js")({
+    "providers": providerService,
+    "circuitBreakers": circuitBreakerService
+});
 
 const app = express();
 
@@ -29,17 +37,23 @@ app.get('/movies', (req, res) =>
     .then(movies => {
        return res.send(movies);
     })
-    .catch(console.error);
+    .catch((data) => {
+        console.error(data);       
+        return res.send(404);
+    });
 });
 
 app.get('/cost/:ids?', (req, res) => 
 {   
-    movieIds = req.query.ids.split(',');
+    let movieIds = req.query.ids.split(',');
     moviesService.getMinimumMovieCost(movieIds)
     .then((minimumMovieCost) => {
        return res.send(minimumMovieCost);
     })
-    .catch(console.error);          
+    .catch((data) => {
+        console.error(data);       
+        return res.send(404);
+    });          
 });
 
 app.listen(serverConfig.port, () => console.log('Movie finder app listening on port ' + serverConfig.port+ '!'));

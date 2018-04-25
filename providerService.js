@@ -20,6 +20,20 @@ function providersService(options) {
         
         getProviderName: function(id) {
            return getProvider(id).name;            
+        },
+
+        getProviderNames: function() {
+            return providers.map(provider => provider.name);
+        },
+
+        getServiceIdentfier: function(url) {
+            //is it a movies or detailed request
+            let isMoviesRequest = _.includes(url, 'movies');
+            let provider = _.find(providers, function(provider) {
+                return _.includes(url, provider.name);
+            });
+            let suffix = isMoviesRequest? "" : "detailed";
+            return provider.name + suffix;                 
         }
     }
 
