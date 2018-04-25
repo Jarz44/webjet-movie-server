@@ -1,3 +1,5 @@
 module.exports = {
-    'token': 'sjd1HfkjU83ksdsm3802k'
+    'x-access-token': 'sjd1HfkjU83ksdsm3802k',
+    'json': true, 
+    'retries': 4
 }

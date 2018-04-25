@@ -1,21 +1,20 @@
-const NodeCache = require('node-cache');
 const _ = require('lodash');
 
-const httpConfig = require('./config/httpConfig.js');
-
+/*
+    Does the majority of the work for the application
+    fetches and reshapes data for the client
+    Improvements:
+    -remove magic strings for movie accesors
+    -the flattening of movies needs work
+*/
 function moviesService(options) {    
-    const cache = new NodeCache();
-
+    const cacheService = options.cache;
     const providerService = options.providers;
     const circuitBreakerService = options.circuitBreakers;
 
-    circuitBreakerService.setFallbackBehaviour(handleFailover);
+    const httpRequestHeaderOptions = options.httpConfig; 
 
-    const httpRequestHeaderOptions  = {
-        'x-access-token' : httpConfig.token,
-        'json': true, 
-        'retries': 4
-    }   
+    circuitBreakerService.setFallbackBehaviour(handleFailover);   
          
     return {
 
@@ -29,7 +28,7 @@ function moviesService(options) {
             });             
         },       
         
-        getMinimumMovieCost: function(ids) {
+        getMinimumCostMovie: function(ids) {
             let promises = providerService.getMovieDetailsUrl(ids).map(url => makeRequest(url));
             return Promise.all(promises)
             .then(data => {
@@ -48,7 +47,7 @@ function moviesService(options) {
     }
 
     function handleFailover(requestUrl) {
-        return cache.get(requestUrl);
+        return cacheService.get(requestUrl);
     }
 
     function buildMoviesList(data) {
@@ -65,7 +64,7 @@ function moviesService(options) {
         })
         .value(); 
 
-        if(movies.length < 2) {
+        if(movies.length < providerService.getNumberOfProviders()) {
             throw new Error();
         }
 
@@ -94,7 +93,7 @@ function moviesService(options) {
         try {
             if(data !== undefined && data.statusCode === 200 ) {  
                 movies = JSON.parse(data.body);
-                cache.set(data.requestUrl, data.body);
+                cacheService.set(data.requestUrl, data.body);
             }
             else {
                 movies = JSON.parse(data);
